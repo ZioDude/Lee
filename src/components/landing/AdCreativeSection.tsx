@@ -139,7 +139,7 @@ const AdCreativeSection = () => {
     if (triggerElement && !scrollTriggerInstanceRef.current) { 
         scrollTriggerInstanceRef.current = ScrollTrigger.create({
             trigger: triggerElement, 
-            start: "top 75%", // Trigger when the top of the element reaches 75% of the viewport height
+            start: "center center", // Trigger when the center of the element hits the center of the viewport
             once: true, 
             onEnter: () => { 
               if (currentViewRef.current === 'initialStatic') {

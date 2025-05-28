@@ -1,115 +1,128 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import Head from 'next/head';
+import React, { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from '@studio-freight/lenis'; // Import Lenis
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import Navbar from '@/components/landing/Navbar';
+import NewHeroSection from '@/components/landing/NewHeroSection';
+import AdCreativeSection from '@/components/landing/AdCreativeSection'; // Import the new section
+import Footer from '@/components/landing/Footer';
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+gsap.registerPlugin(ScrollTrigger);
 
-export default function Home() {
+export default function NewLandingPage() {
+  const pinContainerRef = useRef<HTMLDivElement>(null);
+  const horizontalTrackRef = useRef<HTMLDivElement>(null);
+
+  // useEffect for Lenis smooth scroll
+  useEffect(() => {
+    const lenis = new Lenis();
+
+    lenis.on('scroll', ScrollTrigger.update);
+
+    const raf = (time: number) => {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+    
+    // If you're using GSAP's ticker, you might prefer this:
+    // gsap.ticker.add((time) => {
+    //   lenis.raf(time * 1000); // Lenis expects time in milliseconds
+    // });
+    // gsap.ticker.lagSmoothing(0);
+
+
+    return () => {
+      lenis.destroy();
+      // If using GSAP ticker, remove the listener:
+      // gsap.ticker.remove((time) => { lenis.raf(time * 1000); });
+    };
+  }, []);
+
+  // useEffect for horizontal scroll animation
+  useEffect(() => {
+    const pinContainer = pinContainerRef.current;
+    const horizontalTrack = horizontalTrackRef.current;
+
+    if (pinContainer && horizontalTrack) {
+      const sections = gsap.utils.toArray<HTMLElement>(horizontalTrack.children);
+      const trackWidth = sections.reduce((acc, section) => acc + section.offsetWidth, 0);
+      // Ensure track is wide enough if sections aren't exactly 100vw due to padding/margins
+      // horizontalTrack.style.width = `${trackWidth}px`;
+
+
+      let tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: pinContainer,
+          pin: true,
+          scrub: 1, // Smooth scrubbing
+          start: "top top",
+          end: () => `+=${horizontalTrack.offsetWidth - window.innerWidth}`, // End when the track has scrolled one section width
+          invalidateOnRefresh: true, // Recalculate on resize
+        }
+      });
+
+      tl.to(horizontalTrack, {
+        x: () => -(horizontalTrack.offsetWidth - window.innerWidth), // Scroll one section width
+        ease: "none" // Linear movement
+      });
+
+      // Refresh ScrollTrigger on window resize to handle responsive adjustments
+      ScrollTrigger.addEventListener("refresh", () => tl.scrollTrigger?.refresh());
+      
+      return () => {
+        tl.kill();
+        ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+      };
+    }
+  }, []);
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <>
+      <Head>
+        <title>Adverlead - Meet Lee</title> {/* Updated title */}
+        <meta
+          name="description"
+          content="Meet Lee, your intelligent AI assistant for Adverlead."
         />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      {/* Ensure no horizontal scrollbar from the main page layout itself */}
+      <div style={{ overflowX: 'hidden' }}> 
+        <Navbar />
+        {/* Pin Container for Horizontal Scroll */}
+        <div 
+          ref={pinContainerRef} 
+          className="relative w-full" 
+          style={{ 
+            backgroundImage: `radial-gradient(ellipse at center, rgba(255, 107, 53, 0.15) 0%, rgba(139, 92, 246, 0.1) 35%, rgba(0, 0, 0, 0) 70%)`,
+            backgroundRepeat: 'no-repeat', // Radial gradient should not repeat by default, but explicit here
+            backgroundPosition: 'center center', // Center the radial gradient
+            // backgroundSize: 'cover', // Ensure it covers the area, might need adjustment
+          }}
+        >
+          <div 
+            ref={horizontalTrackRef} 
+            className="flex w-[200vw]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1.5' cy='1.5' r='1.5' fill='rgba(255,107,53,0.07)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat',
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <div className="w-screen h-screen flex-shrink-0"> {/* Section 1 Wrapper */}
+              <NewHeroSection />
+            </div>
+            <div className="w-screen h-screen flex-shrink-0"> {/* Section 2 Wrapper */}
+              <AdCreativeSection />
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        
+        {/* Other sections will be added here later, after the pinned horizontal scroll */}
+        <Footer />
+      </div>
+    </>
   );
 }

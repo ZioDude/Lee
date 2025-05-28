@@ -29,7 +29,7 @@ const AdCreativeSection = () => {
   const [currentView, setCurrentView] = useState<'initialStatic' | 'chatActive'>('initialStatic');
   const currentViewRef = useRef(currentView); 
 
-  const [hasScrolled, setHasScrolled] = useState(false);
+  // const [hasScrolled, setHasScrolled] = useState(false); // Removed hasScrolled state
 
   const [showLoadingInChat, setShowLoadingInChat] = useState(false);
   const [showAdImages, setShowAdImages] = useState(false);
@@ -49,17 +49,7 @@ const AdCreativeSection = () => {
     currentViewRef.current = currentView;
   }, [currentView]);
 
-  useEffect(() => {
-    const onFirstScroll = () => {
-      setHasScrolled(true);
-      window.removeEventListener('scroll', onFirstScroll);
-    };
-    if (!hasScrolled) {
-      window.addEventListener('scroll', onFirstScroll);
-    }
-    return () => window.removeEventListener('scroll', onFirstScroll);
-  }, [hasScrolled]);
-
+  // Removed useEffect for hasScrolled
 
   const resetAllAnimatedElements = () => {
     const textRefsAndParents = [ userPromptRef, leeReplyRef, instagramPromptRef ];
@@ -146,15 +136,28 @@ const AdCreativeSection = () => {
 
   useEffect(() => {
     const triggerElement = animatedDashboardContainerRef.current; 
-    if (triggerElement && hasScrolled && !scrollTriggerInstanceRef.current) {
+    if (triggerElement && !scrollTriggerInstanceRef.current) { 
         scrollTriggerInstanceRef.current = ScrollTrigger.create({
-            trigger: triggerElement, start: "top bottom-=150px", once: true, 
-            onEnter: () => { if (currentViewRef.current === 'initialStatic') startAnimationSequence(); }
+            trigger: triggerElement, 
+            start: "top 75%", // Trigger when the top of the element reaches 75% of the viewport height
+            once: true, 
+            onEnter: () => { 
+              if (currentViewRef.current === 'initialStatic') {
+                startAnimationSequence(); 
+              }
+            }
         });
     }
-  }, [hasScrolled, startAnimationSequence]); // Added startAnimationSequence to dependency array
+    // Cleanup function to kill the ScrollTrigger instance when the component unmounts or dependencies change
+    return () => {
+      if (scrollTriggerInstanceRef.current) {
+        scrollTriggerInstanceRef.current.kill();
+        scrollTriggerInstanceRef.current = null;
+      }
+    };
+  }, [startAnimationSequence]); // Dependency: startAnimationSequence ensures ST is recreated if the function changes
 
-  useEffect(() => { return () => { scrollTriggerInstanceRef.current?.kill(); scrollTriggerInstanceRef.current = null; }; }, []);
+  // Removed the separate cleanup useEffect as it's now part of the ScrollTrigger setup useEffect.
 
   const DashboardSidebar = () => ( <div className="w-14 md:w-16 flex-shrink-0 bg-card/10 rounded-lg p-2 flex flex-col items-center space-y-2 md:space-y-3"> <div className="h-6 w-6 md:h-7 md:w-7 bg-brand-primary-orange/40 rounded-full flex items-center justify-center text-brand-primary-orange"> <LayoutDashboard className="h-3 w-3 md:h-3.5 md:w-3.5" /> </div> {[ { Icon: ImageIcon, active: true, label: "Ad Creatives" }, { Icon: BarChartBig, active: false, label: "Analytics" }, { Icon: Users, active: false, label: "Audiences" }, { Icon: ShoppingBag, active: false, label: "Campaigns" }, { Icon: Settings, active: false, label: "Settings" } ].map(({ Icon, active, label }, i) => ( <div key={`sb-icon-${i}`} title={label} className={`h-5 w-5 md:h-6 md:w-6 rounded-md flex items-center justify-center cursor-pointer ${active ? 'bg-brand-deep-purple/30 text-brand-deep-purple' : 'bg-card/30 text-text-muted-strong/70 hover:bg-brand-sunset-orange/20 hover:text-brand-sunset-orange'}`} > <Icon className="h-3 w-3 md:h-3.5 md:w-3.5" /> </div> ))} <div className="!mt-auto h-4 w-4 md:h-5 md:w-5 rounded-full bg-brand-warm-pink/30 text-brand-warm-pink flex items-center justify-center"> <Bell className="h-2.5 w-2.5 md:h-3 md:w-3" /> </div> </div> );
   const renderInitialStaticContent = () => ( <div className="flex-grow flex flex-col items-center justify-center p-2 h-full"> <div className="flex items-center bg-card/50 p-3 rounded-lg border border-brand-deep-purple/40 shadow-xl w-full max-w-lg cursor-pointer hover:bg-card/60 transition-colors" onClick={startAnimationSequence} > <MessageSquare className="h-5 w-5 text-brand-deep-purple/80 mr-3 flex-shrink-0" /> <input type="text" placeholder="Ask Lee to generate ad creatives..." className="flex-grow bg-transparent text-sm md:text-base text-text-body placeholder-text-muted-strong focus:outline-none pointer-events-none" readOnly /> <Send className="h-4 w-4 md:h-5 md:w-5 text-brand-primary-orange ml-3 flex-shrink-0" /> </div> </div> );

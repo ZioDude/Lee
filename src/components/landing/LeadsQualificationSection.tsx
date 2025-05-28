@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'; // Added useRef, useCallback
 import Link from 'next/link'; // Added for buttons
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { TextPlugin } from 'gsap/TextPlugin';
 import { AuroraText } from "@/components/magicui/aurora-text";
 import { TextAnimate } from "@/components/magicui/text-animate";
 import { AnimatedGradientText } from "@/components/magicui/animated-gradient-text"; // Added for button text
@@ -27,25 +30,100 @@ const LeadsQualificationSection = () => {
     { id: 8, sender: 'Lee', text: "Thank you for sharing that. Understanding your budget helps us tailor the best possible solutions for your kitchen renovation." },
   ], []);
 
-  const [visibleMessages, setVisibleMessages] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [visibleMessagesCount, setVisibleMessagesCount] = useState(0); // How many messages are "structurally" visible
+  const [currentAnimatingMessageIndex, setCurrentAnimatingMessageIndex] = useState(0);
+  const [hasChatAnimationStarted, setHasChatAnimationStarted] = useState(false);
+  
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null); // To trigger animation
+  const messageTextRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+  messageTextRefs.current = []; // Clear refs array on each render before collecting them
+
+  const animationTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const scrollTriggerInstanceRef = useRef<ScrollTrigger | null>(null);
+
+  gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
   useEffect(() => {
-    if (currentMessageIndex < conversation.length) {
-      setIsTyping(true);
-      const currentMessage = conversation[currentMessageIndex];
-      // Simulate typing delay based on message length
-      const typingDelay = currentMessage.text.length * 40 + 500; // Adjust multiplier as needed
-
-      const timer = setTimeout(() => {
-        setVisibleMessages((prev) => [...prev, currentMessage]);
-        setIsTyping(false);
-        setCurrentMessageIndex((prev) => prev + 1);
-      }, typingDelay);
-      return () => clearTimeout(timer);
+    const triggerElement = chatContainerRef.current;
+    if (triggerElement && !scrollTriggerInstanceRef.current && !hasChatAnimationStarted) {
+      scrollTriggerInstanceRef.current = ScrollTrigger.create({
+        trigger: triggerElement,
+        start: "top bottom-=100px",
+        once: true,
+        onEnter: () => {
+          setHasChatAnimationStarted(true);
+        },
+      });
     }
-  }, [currentMessageIndex, conversation]);
+    return () => {
+      scrollTriggerInstanceRef.current?.kill();
+      scrollTriggerInstanceRef.current = null;
+    };
+  }, [hasChatAnimationStarted]); // Rerun if animation has started to ensure ST is killed if component re-renders
+
+  useEffect(() => {
+    if (!hasChatAnimationStarted || currentAnimatingMessageIndex >= conversation.length) {
+      return;
+    }
+
+    if (animationTimelineRef.current) {
+      animationTimelineRef.current.kill();
+    }
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        if (currentAnimatingMessageIndex < conversation.length -1) {
+          setCurrentAnimatingMessageIndex(prev => prev + 1);
+        }
+        animationTimelineRef.current = null;
+      }
+    });
+    animationTimelineRef.current = tl;
+
+    // Ensure the message bubble for the current message is rendered before trying to animate it
+    // This happens by incrementing visibleMessagesCount first for the current message
+    if (visibleMessagesCount <= currentAnimatingMessageIndex) {
+        setVisibleMessagesCount(currentAnimatingMessageIndex + 1);
+    }
+    
+    // Delay slightly to allow React to render the new message bubble if just added
+    tl.call(() => {
+        const messageToAnimate = conversation[currentAnimatingMessageIndex];
+        const targetRef = messageTextRefs.current[currentAnimatingMessageIndex];
+        
+        if (messageToAnimate && targetRef) {
+            // Make parent message bubble visible
+            if(targetRef.parentElement?.parentElement) { // Assuming p -> div.message-content -> div.message-wrapper
+                 gsap.set(targetRef.parentElement.parentElement, { opacity: 0, y: 10 });
+                 tl.to(targetRef.parentElement.parentElement, { opacity: 1, y: 0, duration: 0.3 });
+            }
+
+            const typingSpeedFactor = 0.04;
+            tl.set(targetRef, { text: "" })
+              .to(targetRef, {
+                duration: messageToAnimate.text.length * typingSpeedFactor,
+                text: messageToAnimate.text,
+                ease: "none",
+              });
+        }
+    }, [], "+=0.1"); // Small delay for render
+
+    return () => {
+      tl.kill();
+      animationTimelineRef.current = null;
+    };
+  }, [hasChatAnimationStarted, currentAnimatingMessageIndex, conversation, visibleMessagesCount]);
+
+    // Effect to advance to the next message to be structurally visible,
+    // if the current one has finished animating (handled by timeline onComplete)
+    // This ensures that the next message bubble is ready.
+    useEffect(() => {
+        if (hasChatAnimationStarted && currentAnimatingMessageIndex < conversation.length && visibleMessagesCount <= currentAnimatingMessageIndex) {
+            setVisibleMessagesCount(currentAnimatingMessageIndex + 1);
+        }
+    }, [hasChatAnimationStarted, currentAnimatingMessageIndex, visibleMessagesCount, conversation.length]);
+
 
   // Simple avatar for Lee (e.g., a letter or a small icon)
   const LeeAvatar = () => (
@@ -62,47 +140,45 @@ const LeadsQualificationSection = () => {
 
 
   return (
-    <section className="relative h-full w-full flex items-center justify-center text-text-headline p-4 md:p-8 overflow-hidden"> {/* Removed bg-background, adjusted min-h-screen w-screen */}
+    <section ref={sectionRef} className="relative h-full w-full flex items-center justify-center text-text-headline p-4 md:p-8 overflow-hidden"> {/* Removed bg-background, adjusted min-h-screen w-screen */}
       <div className="container mx-auto h-full flex items-center relative z-10">
         <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center w-full">
           {/* Left Column: Chat Window Mockup */}
-          <div className="w-full bg-card/50 backdrop-blur-md rounded-xl shadow-2xl p-4 md:p-6 border border-brand-primary-orange/30 aspect-[9/10] max-h-[70vh] flex flex-col">
-            <div className="h-full overflow-y-auto flex flex-col space-y-3 pr-2 mb-3">
-              {visibleMessages.map((msg) => (
+          <div 
+            ref={chatContainerRef} 
+            className="w-full bg-card/50 backdrop-blur-md rounded-xl shadow-2xl p-4 md:p-6 border border-brand-primary-orange/30 aspect-[9/10] max-h-[70vh] flex flex-col"
+          >
+            <div className="h-full overflow-y-auto flex flex-col space-y-3 pr-2 mb-3 scrollbar-thin scrollbar-thumb-brand-primary-orange/50 scrollbar-track-transparent">
+              {conversation.slice(0, visibleMessagesCount).map((msg, index) => (
                 <div
-              key={msg.id}
-              className={cn(
-                "flex items-end max-w-[85%] md:max-w-[75%]",
-                msg.sender === 'Lee' ? "self-start" : "self-end"
-              )}
-            >
-              {msg.sender === 'Lee' && <LeeAvatar />}
-              <div
-                className={cn(
-                  "ml-2 mr-2 p-3 rounded-xl shadow",
-                  msg.sender === 'Lee'
-                    ? "bg-brand-deep-purple/20 text-text-body rounded-bl-none"
-                    : "bg-brand-primary-orange/20 text-text-body rounded-br-none"
-                )}
-              >
-                <p className="text-sm md:text-base">{msg.text}</p>
-              </div>
-              {msg.sender === 'Lead' && <LeadAvatar />}
-            </div>
-          ))}
-          {isTyping && currentMessageIndex < conversation.length && (
-            <div className={cn("flex items-end max-w-[85%] md:max-w-[75%]", conversation[currentMessageIndex].sender === 'Lee' ? "self-start" : "self-end")}>
-                  {conversation[currentMessageIndex].sender === 'Lee' && <LeeAvatar />}
-                  <div className={cn("ml-2 mr-2 p-3 rounded-xl shadow", conversation[currentMessageIndex].sender === 'Lee' ? "bg-brand-deep-purple/20 text-text-body rounded-bl-none" : "bg-brand-primary-orange/20 text-text-body rounded-br-none")}>
-                    <div className="flex space-x-1 items-center py-2">
-                      <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse [animation-delay:0s]"></span>
-                      <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse [animation-delay:0.15s]"></span>
-                      <span className="h-2 w-2 bg-gray-400 rounded-full animate-pulse [animation-delay:0.3s]"></span>
-                    </div>
+                  key={msg.id}
+                  className={cn(
+                    "flex items-end max-w-[85%] md:max-w-[75%]",
+                    "opacity-0", // Initially hidden, GSAP will reveal
+                    msg.sender === 'Lee' ? "self-start" : "self-end"
+                  )}
+                >
+                  {msg.sender === 'Lee' && <LeeAvatar />}
+                  <div
+                    className={cn(
+                      "ml-2 mr-2 p-3 rounded-xl shadow",
+                      msg.sender === 'Lee'
+                        ? "bg-brand-deep-purple/20 text-text-body rounded-bl-none"
+                        : "bg-brand-primary-orange/20 text-text-body rounded-br-none"
+                    )}
+                  >
+                    <p 
+                      ref={el => { messageTextRefs.current[index] = el; }} 
+                      className="text-sm md:text-base min-h-[1.2em]" // min-h for layout stability
+                    >
+                      {/* Text will be animated by GSAP if it's the current message, otherwise pre-fill if already shown */}
+                      {(hasChatAnimationStarted && index < currentAnimatingMessageIndex) ? msg.text : ""}
+                    </p>
                   </div>
-                  {conversation[currentMessageIndex].sender === 'Lead' && <LeadAvatar />}
+                  {msg.sender === 'Lead' && <LeadAvatar />}
                 </div>
-              )}
+              ))}
+              {/* Removed isTyping (dots) indicator */}
             </div>
             {/* Optional: Input area mockup */}
             <div className="mt-auto pt-3 border-t border-text-muted/20">

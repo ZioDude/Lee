@@ -67,7 +67,7 @@ const MetaCampaignsSection = () => {
               delay={0.1}
               duration={0.8}
             >
-              Lee doesn't just create stunning ads; he takes them live! Connect your Facebook account, and Lee will seamlessly upload your new creatives to the Meta Ads platform. Tell Lee your goals, and watch as he publishes powerful lead generation campaigns, all through simple commands.
+              {'Lee doesn\'t just create stunning ads; he takes them live! Connect your Facebook account, and Lee will seamlessly upload your new creatives to the Meta Ads platform. Tell Lee your goals, and watch as he publishes powerful lead generation campaigns, all through simple commands.'}
             </TextAnimate>
             
             <div className="flex flex-col sm:flex-row gap-4 items-center">

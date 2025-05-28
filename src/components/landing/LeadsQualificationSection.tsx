@@ -126,7 +126,7 @@ const LeadsQualificationSection = () => {
               delay={0.1}
               duration={0.8}
             >
-              Your AI-Powered Qualification Expert
+              {'Your AI-Powered Qualification Expert'}
             </TextAnimate>
             <TextAnimate
               as="p"
@@ -135,7 +135,7 @@ const LeadsQualificationSection = () => {
               delay={0.2}
               duration={0.8}
             >
-              Lee, our intelligent AI, works tirelessly to engage, qualify, and nurture your leads. Free up your sales team to focus on closing deals, not chasing cold prospects. Experience higher conversion rates and a streamlined sales pipeline.
+              {'Lee, our intelligent AI, works tirelessly to engage, qualify, and nurture your leads. Free up your sales team to focus on closing deals, not chasing cold prospects. Experience higher conversion rates and a streamlined sales pipeline.'}
             </TextAnimate>
 
             <div className="space-y-4 mb-8 w-full max-w-md">
@@ -148,7 +148,7 @@ const LeadsQualificationSection = () => {
                   <div className="flex-shrink-0 h-6 w-6 bg-brand-primary-orange/20 text-brand-primary-orange rounded-full flex items-center justify-center">
                     <benefit.Icon className="h-3.5 w-3.5" />
                   </div>
-                  <p className="text-sm md:text-base text-text-body">{benefit.text}</p>
+                  <p className="text-sm md:text-base text-text-body">{benefit.text.replace(/'/g, "\u0027")}</p> {/* Alternative for dynamic text if needed, or ensure static text is pre-escaped or uses JS strings */}
                 </div>
               ))}
             </div>
@@ -178,7 +178,7 @@ const LeadsQualificationSection = () => {
                            shadow-lg hover:shadow-xl hover:shadow-brand-primary-orange/20
                            transition-all duration-300 transform hover:scale-105"
               >
-                <Link href="/demo-lee">Try Lee's Demo</Link>
+                <Link href="/demo-lee">{'Try Lee\'s Demo'}</Link>
               </Button>
             </div>
           </div>

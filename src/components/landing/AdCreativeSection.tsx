@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react'; // Added useCallback
 import NextImage from 'next/image';
-import { BarChartBig, Users, Settings, Bell, LayoutDashboard, ShoppingBag, MessageSquare, Send, CheckCircle, Image as ImageIcon, Zap, Target, Award, ShieldCheck, ArrowRight } from 'lucide-react'; 
+import { BarChartBig, Users, Settings, Bell, LayoutDashboard, ShoppingBag, MessageSquare, Send, Image as ImageIcon, Zap, Target, Award, ShieldCheck, ArrowRight } from 'lucide-react'; // Removed CheckCircle
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -90,13 +90,14 @@ const AdCreativeSection = () => {
     }
   };
 
-  const startAnimationSequence = () => {
+  const startAnimationSequence = useCallback(() => { // Wrapped in useCallback
     resetAllAnimatedElements();
-    setShowLoadingInChat(false); 
+    setShowLoadingInChat(false);
     setShowAdImages(false);
-    setShowInstagramPrompt(false); setShowPublishButton(false);
-    setCurrentView('chatActive'); 
-  };
+    setShowInstagramPrompt(false);
+    setShowPublishButton(false);
+    setCurrentView('chatActive');
+  }, []); // Added empty dependency array for useCallback, assuming no external dependencies for this function's definition
   
   useEffect(() => {
     if (currentView === 'chatActive') {
@@ -151,7 +152,7 @@ const AdCreativeSection = () => {
             onEnter: () => { if (currentViewRef.current === 'initialStatic') startAnimationSequence(); }
         });
     }
-  }, [hasScrolled]); 
+  }, [hasScrolled, startAnimationSequence]); // Added startAnimationSequence to dependency array
 
   useEffect(() => { return () => { scrollTriggerInstanceRef.current?.kill(); scrollTriggerInstanceRef.current = null; }; }, []);
 

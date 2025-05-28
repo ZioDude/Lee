@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
 import Link from 'next/link'; // Added for buttons
 import { AuroraText } from "@/components/magicui/aurora-text";
 import { TextAnimate } from "@/components/magicui/text-animate";
 import { AnimatedGradientText } from "@/components/magicui/animated-gradient-text"; // Added for button text
 import { Button } from '@/components/ui/button'; // Added for buttons
 import { cn } from '@/lib/utils';
-import { MessageSquare, Zap, CheckSquare, Clock, Users, Bot } from 'lucide-react'; // Added icons
+import { MessageSquare, Zap, CheckSquare } from 'lucide-react'; // Removed Clock, Users, Bot
 
 // Define message types
 interface Message {
@@ -16,7 +16,7 @@ interface Message {
 }
 
 const LeadsQualificationSection = () => {
-  const conversation: Message[] = [
+  const conversation = useMemo((): Message[] => [
     { id: 1, sender: 'Lead', text: "Hi, I saw your ad for home renovations." },
     { id: 2, sender: 'Lee', text: "Hello! Thank you for reaching out. I'd be happy to help you with your renovation project." },
     { id: 3, sender: 'Lee', text: "To start, could you please tell me which part of your house you are considering renovating?" },
@@ -25,7 +25,7 @@ const LeadsQualificationSection = () => {
     { id: 6, sender: 'Lee', text: "Do you have an approximate budget in mind for this project?" },
     { id: 7, sender: 'Lead', text: "We're hoping to keep it under $20,000." },
     { id: 8, sender: 'Lee', text: "Thank you for sharing that. Understanding your budget helps us tailor the best possible solutions for your kitchen renovation." },
-  ];
+  ], []);
 
   const [visibleMessages, setVisibleMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);

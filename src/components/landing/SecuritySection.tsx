@@ -2,7 +2,7 @@ import React, { useEffect, useRef, Suspense } from 'react'; // Added Suspense
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger'; // Uncommented ScrollTrigger
 import { ShieldCheck, Lock, Users, Eye } from 'lucide-react';
-import dynamic from 'next/dynamic';
+// import dynamic from 'next/dynamic'; // Removed unused import
 import VaultModel from '@/../adverlead/src/components/landing/VaultModel'; // Corrected VaultModel import path
 
 // Commented out LottieSecurityAnimation as it's being replaced

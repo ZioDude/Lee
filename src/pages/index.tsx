@@ -2,7 +2,7 @@ import Head from 'next/head';
 import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from '@studio-freight/lenis'; // Import Lenis
+import Lenis from 'lenis'; // Updated Lenis import
 
 import Navbar from '@/components/landing/Navbar';
 import NewHeroSection from '@/components/landing/NewHeroSection';
@@ -47,13 +47,13 @@ export default function NewLandingPage() {
     const horizontalTrack = horizontalTrackRef.current;
 
     if (pinContainer && horizontalTrack) {
-      const sections = gsap.utils.toArray<HTMLElement>(horizontalTrack.children);
-      const trackWidth = sections.reduce((acc, section) => acc + section.offsetWidth, 0);
+      // const sections = gsap.utils.toArray<HTMLElement>(horizontalTrack.children); // trackWidth not used
+      // const trackWidth = sections.reduce((acc, section) => acc + section.offsetWidth, 0); // trackWidth not used
       // Ensure track is wide enough if sections aren't exactly 100vw due to padding/margins
       // horizontalTrack.style.width = `${trackWidth}px`;
 
 
-      let tl = gsap.timeline({
+      const tl = gsap.timeline({ // Changed let to const
         scrollTrigger: {
           trigger: pinContainer,
           pin: true,

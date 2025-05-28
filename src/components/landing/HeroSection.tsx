@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import NextImage from 'next/image'; // Import NextImage
 import { Button } from '@/components/ui/button';
-import { BarChartBig, Users, Settings, Bell, LayoutDashboard, TrendingUp, DollarSign, ShoppingBag, MessageSquare, Send, Image as ImageIcon, CheckCircle } from 'lucide-react'; // Added MessageSquare, Send, ImageIcon, CheckCircle
+import { BarChartBig, Users, Settings, Bell, LayoutDashboard, ShoppingBag, MessageSquare, Send, CheckCircle } from 'lucide-react'; // Removed TrendingUp, DollarSign, ImageIcon
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin'; // For typing animation
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -93,9 +94,9 @@ const HeroSection = () => {
                   <div 
                     key={index} 
                     ref={el => { adImageRefs.current[index] = el; }} 
-                    className="aspect-video bg-card/40 rounded-lg overflow-hidden shadow-xl opacity-0"
+                    className="relative aspect-video bg-card/40 rounded-lg overflow-hidden shadow-xl opacity-0" // Added relative
                   >
-                    <img src={src} alt={`Ad Creative ${index + 1}`} className="w-full h-full object-contain p-1.5" />
+                    <NextImage src={src} alt={`Ad Creative ${index + 1}`} layout="fill" objectFit="contain" className="p-1.5" />
                   </div>
                 ))}
               </div>
@@ -127,6 +128,8 @@ const HeroSection = () => {
     const dashboardElement = dashboardRef.current;
     const sectionElement = sectionRef.current;
     const innerContentContainer = innerDashboardRef.current;
+    const currentLeeReplyRef = leeReplyRef.current; // For cleanup
+    const currentUserPromptRef = userPromptRef.current; // For cleanup
 
     // Animate Hero Text Content on Mount
     const heroBadgeEl = heroBadgeRef.current;
@@ -224,8 +227,8 @@ const HeroSection = () => {
         st.kill(); 
         if (mainSequenceTimeline) mainSequenceTimeline.kill();
         mainDashboardCleanup();
-        if (userPromptRef.current) gsap.killTweensOf(userPromptRef.current);
-        if (leeReplyRef.current) gsap.killTweensOf(leeReplyRef.current);
+        if (currentUserPromptRef) gsap.killTweensOf(currentUserPromptRef); // Use variable
+        if (currentLeeReplyRef) gsap.killTweensOf(currentLeeReplyRef); // Use variable
       };
     }
   }, []); 

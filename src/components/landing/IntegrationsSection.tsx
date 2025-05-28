@@ -20,30 +20,31 @@ const IntegrationsSection = () => {
 
   useEffect(() => {
     const sectionEl = sectionRef.current;
-    const textEl = textContentRef.current;
-    const graphicEl = graphicRef.current;
+    const currentTextEl = textContentRef.current; // For cleanup
+    const currentGraphicEl = graphicRef.current; // For cleanup
+    const currentIconsRef_current = iconsRef.current; // For cleanup
 
-    if (sectionEl && textEl && graphicEl) {
+    if (sectionEl && currentTextEl && currentGraphicEl) {
       // Animate text content
-      gsap.fromTo(textEl.children, 
+      gsap.fromTo(currentTextEl.children, 
         { opacity: 0, y: 50 }, 
         { 
           opacity: 1, y: 0, stagger: 0.2, duration: 0.6, ease: 'power2.out',
-          scrollTrigger: { trigger: textEl, start: "top 80%", toggleActions: "play none none none" }
+          scrollTrigger: { trigger: currentTextEl, start: "top 80%", toggleActions: "play none none none" }
         }
       );
 
       // Animate graphic container
-      gsap.fromTo(graphicEl,
+      gsap.fromTo(currentGraphicEl,
         { opacity: 0, scale: 0.8 },
         { 
-          opacity: 1, scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.75)', delay: 0.3, // Moved delay here
-          scrollTrigger: { trigger: graphicEl, start: "top 80%", toggleActions: "play none none none" }
+          opacity: 1, scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.75)', delay: 0.3, 
+          scrollTrigger: { trigger: currentGraphicEl, start: "top 80%", toggleActions: "play none none none" }
         }
       );
       
       // Animate individual icons within the graphic
-      iconsRef.current.forEach((iconEl, index) => { // Added index for potential keying if needed
+      currentIconsRef_current.forEach((iconEl) => { // Removed unused 'index'
         if (iconEl) {
           gsap.fromTo(iconEl,
             { opacity: 0, scale: 0.5, y: 20 },
@@ -80,7 +81,8 @@ const IntegrationsSection = () => {
                   ease: "sine.inOut",
                 });
                 // Store the timeline on the element to kill it later if needed, though ScrollTrigger cleanup might handle it
-                (iconEl as any)._continuousAnimation = floatTimeline; 
+                // @ts-expect-error _continuousAnimation is a dynamic property
+                iconEl._continuousAnimation = floatTimeline; 
               }
             }
           );
@@ -89,21 +91,24 @@ const IntegrationsSection = () => {
     }
     // Cleanup ScrollTriggers and continuous animations
     return () => {
-      iconsRef.current.forEach(iconEl => {
-        if (iconEl && (iconEl as any)._continuousAnimation) {
-          ((iconEl as any)._continuousAnimation as gsap.core.Timeline).kill();
-          delete (iconEl as any)._continuousAnimation; // Clean up the stored property
+      currentIconsRef_current.forEach(iconEl => {
+        // @ts-expect-error _continuousAnimation is a dynamic property
+        if (iconEl && iconEl._continuousAnimation) {
+          // @ts-expect-error _continuousAnimation is a dynamic property
+          (iconEl._continuousAnimation as gsap.core.Timeline).kill();
+          // @ts-expect-error _continuousAnimation is a dynamic property
+          delete iconEl._continuousAnimation; // Clean up the stored property
         }
       });
       // Corrected cleanup for ScrollTriggers
       const triggersToKill = ScrollTrigger.getAll().filter(trigger => {
         const triggerElement = trigger.trigger;
-        return triggerElement === textEl || 
-               triggerElement === graphicEl || 
-               (iconsRef.current && iconsRef.current.includes(triggerElement as HTMLDivElement));
+        return triggerElement === currentTextEl || 
+               triggerElement === currentGraphicEl || 
+               (currentIconsRef_current && currentIconsRef_current.includes(triggerElement as HTMLDivElement));
       });
       triggersToKill.forEach(trigger => trigger.kill());
-    }; // Removed one extra closing brace here that was causing issues
+    };
   }, []);
 
   const iconData = [

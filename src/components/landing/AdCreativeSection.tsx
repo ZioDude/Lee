@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Image from 'next/image'; // Assuming Next.js Image component
-import { BarChartBig, Users, Settings, Bell, LayoutDashboard, ShoppingBag, MessageSquare, Send, Image as ImageIcon, CheckCircle } from 'lucide-react';
+// import Image from 'next/image'; // Removed unused import
+import NextImage from 'next/image'; // Using NextImage alias to avoid conflict if Image from lucide-react was intended elsewhere
+import { BarChartBig, Users, Settings, Bell, LayoutDashboard, ShoppingBag, MessageSquare, Send, CheckCircle } from 'lucide-react'; // Removed ImageIcon
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -122,9 +123,9 @@ const AdCreativeSection = () => {
                   <div 
                     key={index} 
                     ref={el => { adImageRefs.current[index] = el; }} 
-                    className="aspect-video bg-card/40 rounded-md overflow-hidden shadow-lg opacity-0"
+                    className="relative aspect-video bg-card/40 rounded-md overflow-hidden shadow-lg opacity-0" // Added relative for NextImage fill
                   >
-                    <img src={src} alt={`Ad Creative ${index + 1}`} className="w-full h-full object-contain p-1" />
+                    <NextImage src={src} alt={`Ad Creative ${index + 1}`} layout="fill" objectFit="contain" className="p-1" />
                   </div>
                 ))}
               </div>

@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Lottie from 'lottie-react';
-// Use ComponentProps to derive the type from the Lottie component itself
-type LottieComponentProps = React.ComponentProps<typeof Lottie>;
+// type LottieComponentProps = React.ComponentProps<typeof Lottie>; // Removed unused type
 
 interface LottieAnimationProps {
   animationPath: string; // Custom prop to fetch animation data
@@ -20,9 +19,8 @@ const LottieSecurityAnimation: React.FC<LottieAnimationProps> = ({
   autoplay = true,
   className,
 }) => {
-  // Use 'any' for animationData if LottieProps['animationData'] is problematic, 
-  // or find the correct type for Bodymovin JSON
-  const [animationData, setAnimationData] = useState<any>(null); 
+  // Use 'object' for animationData as a more specific type than 'any'
+  const [animationData, setAnimationData] = useState<object | null>(null); 
 
   useEffect(() => {
     fetch(animationPath)

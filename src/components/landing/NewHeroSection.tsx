@@ -17,40 +17,38 @@ import { TextAnimate } from "@/components/magicui/text-animate";
 const NewHeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
-  const paragraphRef = useRef<HTMLParagraphElement>(null);
+  // const paragraphRef = useRef<HTMLParagraphElement>(null); // Removed unused ref
   const ctaContainerRef = useRef<HTMLDivElement>(null); // Ref for CTA buttons container
   const modelContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const currentSectionRef = sectionRef.current; // For cleanup
     const elementsToAnimate = [
       titleRef.current,
-      // paragraphRef.current, // TextAnimate will handle its own animation
       ctaContainerRef.current,
       modelContainerRef.current,
-    ].filter(Boolean); // Filter out null refs just in case
+    ].filter(Boolean); 
 
     if (elementsToAnimate.length === 0) return;
 
     const tl = gsap.timeline({
       scrollTrigger: {
-        trigger: sectionRef.current,
-        start: 'top 80%', // Start animation when 80% of the section is in view
-        toggleActions: 'play none none none', // Play once
+        trigger: currentSectionRef, // Use variable
+        start: 'top 80%', 
+        toggleActions: 'play none none none', 
       },
     });
 
-    // Set initial states (invisible and slightly offset)
     gsap.set(elementsToAnimate, { opacity: 0, y: 50 });
 
     tl.to(titleRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' })
-      // .to(paragraphRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.6') // Removed, TextAnimate handles paragraph
-      .to(ctaContainerRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.6') // Stagger
-      .to(modelContainerRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.6'); // Stagger
+      .to(ctaContainerRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.6') 
+      .to(modelContainerRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.6'); 
       
     return () => {
       tl.kill();
       ScrollTrigger.getAll().forEach(trigger => {
-        if (trigger.trigger === sectionRef.current) {
+        if (trigger.trigger === currentSectionRef) { // Use variable in cleanup
           trigger.kill();
         }
       });

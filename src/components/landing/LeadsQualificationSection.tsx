@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'; // Added useRef, useCallback
+import React, { useState, useEffect, useMemo, useRef } from 'react'; // Added useRef, removed useCallback
 import Link from 'next/link'; // Added for buttons
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

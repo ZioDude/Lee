@@ -1,235 +1,212 @@
 import React, { useEffect, useRef, useState } from 'react';
-// import Image from 'next/image'; // Removed unused import
-import NextImage from 'next/image'; // Using NextImage alias to avoid conflict if Image from lucide-react was intended elsewhere
-import { BarChartBig, Users, Settings, Bell, LayoutDashboard, ShoppingBag, MessageSquare, Send, CheckCircle } from 'lucide-react'; // Removed ImageIcon
+import NextImage from 'next/image';
+import { BarChartBig, Users, Settings, Bell, LayoutDashboard, ShoppingBag, MessageSquare, Send, CheckCircle, Image as ImageIcon, Zap, Target, Award, ShieldCheck, ArrowRight } from 'lucide-react'; 
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-// import { TextAnimate } from '@/components/magicui/text-animate'; // We can add this later for the right-side text
 
 gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-// Using placeholder images from HeroSection for now
-const placeholderAdImages = [
-  "/PLACELIFT.png",
-  "/renovation-Bathroom-1747859972116.jpg",
+const adImageSources = [
+  "/ad1.png",
+  "/ad2.png",
+  "/ad3.png",
+  "/ad4.png",
+];
+
+const benefits = [
+  { icon: Zap, text: "Lightning-Fast Generation: Get ad creatives in seconds, not hours." },
+  { icon: Target, text: "Hyper-Personalized Content: AI crafts ads that resonate with your audience." },
+  { icon: Award, text: "Optimized for Performance: Maximize engagement and conversions." },
+  { icon: ShieldCheck, text: "Brand Consistency: Maintain a cohesive brand voice effortlessly." },
 ];
 
 const AdCreativeSection = () => {
-  const animatedDashboardContainerRef = useRef<HTMLDivElement>(null); // Ref for the dashboard container in this section
+  const sectionContainerRef = useRef<HTMLDivElement>(null);
+  const animatedDashboardContainerRef = useRef<HTMLDivElement>(null); 
+  const chatContentContainerRef = useRef<HTMLDivElement>(null); 
   
-  // State for the interactive dashboard sequence
-  const [currentDashboardView, setCurrentDashboardView] = useState<'initialStatic' | 'chat' | 'loading' | 'results'>('initialStatic');
+  const [currentView, setCurrentView] = useState<'initialStatic' | 'chatActive'>('initialStatic');
+  const currentViewRef = useRef(currentView); 
+
+  const [hasScrolled, setHasScrolled] = useState(false);
+
+  const [showLoadingInChat, setShowLoadingInChat] = useState(false);
+  const [showAdImages, setShowAdImages] = useState(false);
+  const [showInstagramPrompt, setShowInstagramPrompt] = useState(false); 
+  const [showPublishButton, setShowPublishButton] = useState(false); 
   
-  // Refs for text elements within the animated dashboard
   const userPromptRef = useRef<HTMLParagraphElement>(null);
   const leeReplyRef = useRef<HTMLParagraphElement>(null);
   const adImageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const instagramPromptRef = useRef<HTMLParagraphElement>(null); 
+  const publishButtonContainerRef = useRef<HTMLDivElement>(null);
 
-  // Ref for the main GSAP timeline of the dashboard sequence
-  const mainSequenceTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const chatAnimationTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const scrollTriggerInstanceRef = useRef<ScrollTrigger | null>(null);
 
-  const playDashboardAnimationSequence = () => {
-    // Kill any existing timeline to prevent overlaps if re-triggered
-    if (mainSequenceTimelineRef.current && mainSequenceTimelineRef.current.isActive()) {
-      mainSequenceTimelineRef.current.kill();
+  useEffect(() => {
+    currentViewRef.current = currentView;
+  }, [currentView]);
+
+  useEffect(() => {
+    const onFirstScroll = () => {
+      setHasScrolled(true);
+      window.removeEventListener('scroll', onFirstScroll);
+    };
+    if (!hasScrolled) {
+      window.addEventListener('scroll', onFirstScroll);
     }
+    return () => window.removeEventListener('scroll', onFirstScroll);
+  }, [hasScrolled]);
 
-    // Reset ad images
-    adImageRefs.current.forEach(imgRef => {
-      if (imgRef) gsap.set(imgRef, { opacity: 0, y: 10, scale: 0.95 });
+
+  const resetAllAnimatedElements = () => {
+    const textRefsAndParents = [ userPromptRef, leeReplyRef, instagramPromptRef ];
+    textRefsAndParents.forEach(textRef => {
+      if (textRef.current) {
+        gsap.killTweensOf(textRef.current);
+        textRef.current.textContent = ""; 
+        if (textRef.current.parentElement) {
+          gsap.killTweensOf(textRef.current.parentElement);
+          gsap.set(textRef.current.parentElement, { opacity: 0, y: 10 });
+        }
+      }
     });
 
-    setCurrentDashboardView('chat');
-    
-    // Delay slightly to allow React to render the 'chat' view before GSAP targets refs
-    setTimeout(() => { 
-      if (!userPromptRef.current || !leeReplyRef.current) {
-        setCurrentDashboardView('initialStatic'); // Fallback if refs not ready
-        return;
+    adImageRefs.current.forEach(imgRef => {
+      if (imgRef) {
+        gsap.killTweensOf(imgRef);
+        gsap.set(imgRef, { opacity: 0, y: 20, scale: 0.9 });
       }
-
-      const newTimeline = gsap.timeline();
-      mainSequenceTimelineRef.current = newTimeline; // Store the new timeline
-
-      const userQuery = "Generate ads for my renovation business"; 
-      const aiReply = "Sure! Generating ad creatives...";
-      const typingSpeedFactor = 0.03 * 1.33; 
-
-      newTimeline.set(userPromptRef.current, {text: ""}) 
-        .set(leeReplyRef.current, {text: ""})
-        .to(userPromptRef.current, { duration: userQuery.length * typingSpeedFactor, text: userQuery, ease: "none" })
-        .to(leeReplyRef.current, { duration: aiReply.length * typingSpeedFactor, text: aiReply, ease: "none" }, "+=0.4")
-        .call(() => setCurrentDashboardView('loading'), [], "+=0.5")
-        .to({}, {duration: 1.33}) 
-        .call(() => setCurrentDashboardView('results'), []) 
-        .to({}, {duration: 2.66}) 
-        .call(() => {
-          adImageRefs.current.forEach(imgRef => {
-            if (imgRef) gsap.set(imgRef, { opacity: 0, y: 10, scale: 0.95 });
-          });
-          setCurrentDashboardView('initialStatic');
-        });
-    }, 2000); // Increased delay before animation starts
+    });
+    if (publishButtonContainerRef.current) {
+      gsap.killTweensOf(publishButtonContainerRef.current);
+      gsap.set(publishButtonContainerRef.current, { opacity: 0, y: 10 });
+    }
+    if (chatAnimationTimelineRef.current) {
+        chatAnimationTimelineRef.current.kill();
+        chatAnimationTimelineRef.current = null;
+    }
   };
 
-  // Sidebar component (scaled down slightly if needed, or adjust padding/icon sizes)
-  const DashboardSidebar = () => (
-    <div className="w-14 md:w-16 flex-shrink-0 bg-card/10 rounded-lg p-2 flex flex-col items-center space-y-2 md:space-y-3">
-      <div className="h-6 w-6 md:h-7 md:w-7 bg-brand-primary-orange/40 rounded-full flex items-center justify-center text-brand-primary-orange">
-        <LayoutDashboard className="h-3 w-3 md:h-3.5 md:w-3.5" />
-      </div>
-      {[BarChartBig, Users, ShoppingBag, Settings].map((Icon, i) => (
-        <div key={`sb-icon-${i}`} className={`h-4 w-4 md:h-5 md:w-5 rounded-md flex items-center justify-center ${i === 1 ? 'bg-brand-deep-purple/30 text-brand-deep-purple' : 'bg-card/30 text-text-muted-strong/70 hover:bg-brand-sunset-orange/20 hover:text-brand-sunset-orange'}`}>
-          <Icon className="h-2.5 w-2.5 md:h-3 md:w-3" />
-        </div>
-      ))}
-      <div className="!mt-auto h-4 w-4 md:h-5 md:w-5 rounded-full bg-brand-warm-pink/30 text-brand-warm-pink flex items-center justify-center">
-        <Bell className="h-2.5 w-2.5 md:h-3 md:w-3" />
-      </div>
-    </div>
+  const startAnimationSequence = () => {
+    resetAllAnimatedElements();
+    setShowLoadingInChat(false); 
+    setShowAdImages(false);
+    setShowInstagramPrompt(false); setShowPublishButton(false);
+    setCurrentView('chatActive'); 
+  };
+  
+  useEffect(() => {
+    if (currentView === 'chatActive') {
+      const userQuery = "Generate ads for my renovation business";
+      const aiReply = "Sure! Generating ad creatives...";
+      const typingSpeedFactor = 0.04;
+      const tl = gsap.timeline({ onComplete: () => { if (chatAnimationTimelineRef.current === tl) chatAnimationTimelineRef.current = null; } });
+      chatAnimationTimelineRef.current = tl;
+
+      if (userPromptRef.current?.parentElement) tl.to(userPromptRef.current.parentElement, { opacity: 1, y: 0, duration: 0.3 }, "+=0.1");
+      tl.set(userPromptRef.current, { text: "" }).to(userPromptRef.current, { duration: userQuery.length * typingSpeedFactor, text: userQuery, ease: "none" });
+      if (leeReplyRef.current?.parentElement) tl.to(leeReplyRef.current.parentElement, { opacity: 1, y: 0, duration: 0.3 }, "-=0.2");
+      tl.set(leeReplyRef.current, { text: "" }).to(leeReplyRef.current, { duration: aiReply.length * typingSpeedFactor, text: aiReply, ease: "none" })
+        .call(() => setShowLoadingInChat(true), [], "+=0.2")
+        .to({}, { duration: 2 })  
+        .call(() => { 
+          setShowLoadingInChat(false); 
+          setShowAdImages(true); 
+        }, []);
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    if (showAdImages) {
+      const images = adImageRefs.current.filter(el => el !== null) as HTMLDivElement[];
+      if (images.length > 0) gsap.to(images, { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.2, ease: 'power2.out', delay: 0.1, onComplete: () => setShowInstagramPrompt(true) });
+      else setShowInstagramPrompt(true);
+    } else adImageRefs.current.forEach(imgRef => { if(imgRef) gsap.set(imgRef, {opacity:0, y:20, scale:0.9}); });
+  }, [showAdImages]);
+
+  useEffect(() => {
+    const el = instagramPromptRef.current; const parent = el?.parentElement;
+    if (showInstagramPrompt && el && parent) {
+      const text = "Do you want me to upload them to your Instagram page and run ads?"; const speed = 0.04;
+      gsap.fromTo(parent, {opacity:0, y:10}, {opacity:1, y:0, duration:0.3, ease: 'power1.out', delay: 0.2, onComplete: () => {
+        gsap.set(el, { text: ""}); gsap.to(el, { duration: text.length * speed, text, ease: "none", delay: 0.1,  onComplete: () => setShowPublishButton(true) });
+      }});
+    } else if (!showInstagramPrompt && parent) { gsap.set(parent, {opacity:0, y:10}); if(el) el.textContent = ""; }
+  }, [showInstagramPrompt]);
+
+  useEffect(() => {
+    const el = publishButtonContainerRef.current;
+    if (showPublishButton && el) gsap.fromTo(el, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', delay: 0.1 });
+    else if (!showPublishButton && el) gsap.set(el, {opacity:0, y:10});
+  }, [showPublishButton]);
+
+  useEffect(() => {
+    const triggerElement = animatedDashboardContainerRef.current; 
+    if (triggerElement && hasScrolled && !scrollTriggerInstanceRef.current) {
+        scrollTriggerInstanceRef.current = ScrollTrigger.create({
+            trigger: triggerElement, start: "top bottom-=150px", once: true, 
+            onEnter: () => { if (currentViewRef.current === 'initialStatic') startAnimationSequence(); }
+        });
+    }
+  }, [hasScrolled]); 
+
+  useEffect(() => { return () => { scrollTriggerInstanceRef.current?.kill(); scrollTriggerInstanceRef.current = null; }; }, []);
+
+  const DashboardSidebar = () => ( <div className="w-14 md:w-16 flex-shrink-0 bg-card/10 rounded-lg p-2 flex flex-col items-center space-y-2 md:space-y-3"> <div className="h-6 w-6 md:h-7 md:w-7 bg-brand-primary-orange/40 rounded-full flex items-center justify-center text-brand-primary-orange"> <LayoutDashboard className="h-3 w-3 md:h-3.5 md:w-3.5" /> </div> {[ { Icon: ImageIcon, active: true, label: "Ad Creatives" }, { Icon: BarChartBig, active: false, label: "Analytics" }, { Icon: Users, active: false, label: "Audiences" }, { Icon: ShoppingBag, active: false, label: "Campaigns" }, { Icon: Settings, active: false, label: "Settings" } ].map(({ Icon, active, label }, i) => ( <div key={`sb-icon-${i}`} title={label} className={`h-5 w-5 md:h-6 md:w-6 rounded-md flex items-center justify-center cursor-pointer ${active ? 'bg-brand-deep-purple/30 text-brand-deep-purple' : 'bg-card/30 text-text-muted-strong/70 hover:bg-brand-sunset-orange/20 hover:text-brand-sunset-orange'}`} > <Icon className="h-3 w-3 md:h-3.5 md:w-3.5" /> </div> ))} <div className="!mt-auto h-4 w-4 md:h-5 md:w-5 rounded-full bg-brand-warm-pink/30 text-brand-warm-pink flex items-center justify-center"> <Bell className="h-2.5 w-2.5 md:h-3 md:w-3" /> </div> </div> );
+  const renderInitialStaticContent = () => ( <div className="flex-grow flex flex-col items-center justify-center p-2 h-full"> <div className="flex items-center bg-card/50 p-3 rounded-lg border border-brand-deep-purple/40 shadow-xl w-full max-w-lg cursor-pointer hover:bg-card/60 transition-colors" onClick={startAnimationSequence} > <MessageSquare className="h-5 w-5 text-brand-deep-purple/80 mr-3 flex-shrink-0" /> <input type="text" placeholder="Ask Lee to generate ad creatives..." className="flex-grow bg-transparent text-sm md:text-base text-text-body placeholder-text-muted-strong focus:outline-none pointer-events-none" readOnly /> <Send className="h-4 w-4 md:h-5 md:w-5 text-brand-primary-orange ml-3 flex-shrink-0" /> </div> </div> );
+  
+  const renderChatActiveContent = () => ( 
+    <div ref={chatContentContainerRef} className="flex-grow flex flex-col justify-end p-3 md:p-4 space-y-3 w-full h-full overflow-y-auto scrollbar-thin scrollbar-thumb-brand-primary-orange/50 scrollbar-track-transparent"> 
+      <div className="bg-card/70 p-2.5 rounded-lg self-end max-w-[85%] shadow-md border border-brand-primary-orange/30 opacity-0"> <p ref={userPromptRef} className="text-sm md:text-base text-text-body min-h-[1.2em]">&nbsp;</p> </div> 
+      <div className="bg-brand-deep-purple/50 p-2.5 rounded-lg self-start max-w-[85%] shadow-md border border-brand-deep-purple/50 opacity-0"> <p ref={leeReplyRef} className="text-sm md:text-base text-text-subheading min-h-[1.2em]">&nbsp;</p> </div> 
+      {showLoadingInChat && ( <div className="self-start flex items-center space-x-2 p-2"> <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-brand-primary-orange"></div> <p className="text-sm text-text-muted-strong">Lee is generating creatives...</p> </div> )} 
+      {showAdImages && ( <div className="grid grid-cols-2 gap-1.5 md:gap-2 w-full self-start max-w-[85%]"> {adImageSources.map((src, index) => ( <div key={src} ref={el => { adImageRefs.current[index] = el; }} className="relative aspect-square bg-card/50 rounded-md overflow-hidden shadow-lg opacity-0" > <NextImage src={src} alt={`Ad Creative ${index + 1}`} layout="fill" objectFit="cover" /> </div> ))} </div> )} 
+      {showInstagramPrompt && ( <div className="bg-brand-deep-purple/50 p-2.5 rounded-lg self-start max-w-[85%] shadow-md border border-brand-deep-purple/50 opacity-0"> <p ref={instagramPromptRef} className="text-sm md:text-base text-text-subheading min-h-[1.2em]">&nbsp;</p> </div> )} 
+      {showPublishButton && ( <div ref={publishButtonContainerRef} className="self-end max-w-[85%] mt-2 opacity-0">  <button onClick={startAnimationSequence} className="bg-transparent hover:bg-brand-primary-orange/10 text-brand-primary-orange font-semibold py-2 px-4 border border-brand-primary-orange rounded-lg shadow-md transition-colors duration-150 ease-in-out text-sm md:text-base" > Publish to Instagram </button> </div> )} 
+    </div> 
   );
 
-  const renderDashboardContent = () => {
-    switch (currentDashboardView) {
-      case 'chat':
-        return (
-          <div className="flex-grow flex flex-col justify-end p-2 md:p-3 space-y-2 w-full">
-            <div className="bg-card/60 p-2 rounded-md self-end max-w-[85%] shadow">
-              <p ref={userPromptRef} className="text-xs md:text-sm text-text-body min-h-[1.1em]">&nbsp;</p>
-            </div>
-            <div className="bg-brand-deep-purple/40 p-2 rounded-md self-start max-w-[85%] shadow">
-              <p ref={leeReplyRef} className="text-xs md:text-sm text-text-subheading min-h-[1.1em]">&nbsp;</p>
-            </div>
-          </div>
-        );
-      case 'loading':
-        return (
-          <div className="flex-grow flex flex-col items-center justify-center p-2 md:p-3">
-            <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-t-2 border-b-2 border-brand-primary-orange"></div>
-            <p className="mt-3 text-sm text-text-muted-strong">Generating ads...</p>
-          </div>
-        );
-      case 'results':
-        return (
-          <div className="flex-grow flex flex-col items-center justify-center p-1 md:p-2">
-            <div className="w-full bg-card/60 rounded-lg shadow-xl p-2 md:p-3 border border-brand-primary-orange/40 flex flex-col">
-              <div className="flex items-center bg-green-500/20 p-2 rounded-md border border-green-500/50 shadow-sm mb-2 md:mb-3">
-                <CheckCircle className="h-4 w-4 text-green-400 mr-2 flex-shrink-0" />
-                <p className="text-xs md:text-sm text-green-300">Ad creatives generated!</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2 p-0.5 flex-grow">
-                {placeholderAdImages.slice(0, 2).map((src, index) => (
-                  <div 
-                    key={index} 
-                    ref={el => { adImageRefs.current[index] = el; }} 
-                    className="relative aspect-video bg-card/40 rounded-md overflow-hidden shadow-lg opacity-0" // Added relative for NextImage fill
-                  >
-                    <NextImage src={src} alt={`Ad Creative ${index + 1}`} layout="fill" objectFit="contain" className="p-1" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-      case 'initialStatic':
-      default: 
-        return (
-          <div className="flex-grow flex flex-col items-center justify-center p-2">
-            <div 
-              className="flex items-center bg-card/30 p-1.5 rounded-md border border-brand-deep-purple/40 shadow-md w-full max-w-md cursor-pointer hover:bg-card/40 transition-colors"
-              onClick={playDashboardAnimationSequence} // Added onClick to replay animation
-            >
-              <MessageSquare className="h-4 w-4 text-brand-deep-purple/80 mr-2" />
-              <input 
-                type="text" 
-                placeholder="Ask Lee to generate ad creatives..." 
-                className="flex-grow bg-transparent text-xs md:text-sm text-text-body placeholder-text-muted-strong focus:outline-none pointer-events-none" // Added pointer-events-none
-                readOnly 
-              />
-              <Send className="h-3.5 w-3.5 text-brand-primary-orange ml-1.5" />
-            </div>
-          </div>
-        );
-    }
-  };
-
-  // Effect for the dashboard animation sequence triggered by ScrollTrigger
-  useEffect(() => {
-    const dashboardContainer = animatedDashboardContainerRef.current;
-    let st: ScrollTrigger | null = null;
-
-    if (dashboardContainer) {
-      st = ScrollTrigger.create({
-        trigger: dashboardContainer,
-        start: "center center", 
-        once: true, // Play once on scroll
-        onEnter: () => {
-          playDashboardAnimationSequence();
-        }
-      });
-    }
-    
-    return () => {
-      st?.kill(); 
-      // Kill the timeline when the component unmounts or dependencies change
-      if (mainSequenceTimelineRef.current) {
-        mainSequenceTimelineRef.current.kill();
-      }
-      // Clean up tweens on individual elements if necessary, though timeline.kill() should handle children.
-      // if (userPromptRef.current) gsap.killTweensOf(userPromptRef.current);
-      // if (leeReplyRef.current) gsap.killTweensOf(leeReplyRef.current);
-    };
-  }, []); // Empty dependency array: runs once on mount for ScrollTrigger setup
-
-  // Effect for animating ad results
-  useEffect(() => {
-    if (currentDashboardView === 'results') {
-      const images = adImageRefs.current.filter(el => el !== null);
-      if (images.length > 0) {
-        gsap.set(images, { opacity: 0, y: 10, scale: 0.95 }); 
-        gsap.to(images, 
-          { 
-            opacity: 1, y: 0, scale: 1,
-            duration: 0.25 * 1.33, // Slower animation
-            stagger: 0.1 * 1.33,  // Slower stagger
-            ease: 'power2.out', 
-            delay: 0.1 * 1.33     // Slower delay
-          }
-        );
-      }
-    }
-  }, [currentDashboardView]);
-
   return (
-    <section className="relative h-screen w-screen flex items-center justify-center bg-transparent text-text-headline p-4 md:p-8 overflow-hidden"> {/* bg-transparent */}
-      {/* Background div removed, will be handled by parent in pages/index.tsx */}
-
+    <section ref={sectionContainerRef} className="relative min-h-screen w-screen flex items-center justify-center bg-transparent text-text-headline p-4 md:p-8 lg:p-12 overflow-hidden">
       <div className="container mx-auto h-full flex items-center relative z-10">
-        <div className="grid md:grid-cols-2 gap-4 md:gap-8 items-center w-full">
-          {/* Left Column: Animated Dashboard */}
-          <div ref={animatedDashboardContainerRef} className="flex justify-center items-center bg-black/40 backdrop-blur-md p-2 md:p-3 rounded-lg shadow-2xl aspect-[16/10] max-h-[65vh] overflow-hidden border border-brand-deep-purple/30">
-            <div className="flex h-full w-full space-x-1 md:space-x-1.5"> {/* Main flex container for sidebar and content */}
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-stretch w-full h-full"> 
+          <div ref={animatedDashboardContainerRef} className="flex justify-center items-center bg-black/50 backdrop-blur-lg p-2 md:p-3 rounded-xl shadow-2xl h-[600px] md:h-[650px] w-full overflow-hidden border border-brand-deep-purple/40">
+            <div className="flex h-full w-full space-x-1.5 md:space-x-2">
               <DashboardSidebar />
-              <div className="flex-grow flex flex-col h-full overflow-hidden items-center justify-center">
-                 {renderDashboardContent()}
+              <div className="flex-grow flex flex-col h-full overflow-hidden relative">
+                {currentView === 'initialStatic' && renderInitialStaticContent()}
+                {currentView === 'chatActive' && renderChatActiveContent()}
               </div>
             </div>
           </div>
-
-          {/* Right Column: Text Content */}
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-4 md:mb-6 leading-tight">
-              Automate Ad Creatives with Lee
+          <div className="flex flex-col justify-center text-center md:text-left h-full py-8 md:py-0"> 
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-6 md:mb-8 leading-tight">
+              Automate Ad Creatives <span className="text-brand-primary-orange">with Lee</span>
             </h2>
-            {/* We can wrap this with TextAnimate later */}
-            <p className="text-base md:text-lg text-text-body max-w-md mb-4">
+            <p className="text-lg md:text-xl text-text-body max-w-xl mb-6 md:mb-8">
               Discover how Lee, your AI assistant, can revolutionize your ad creative process. 
               Generate compelling ad copy, design stunning visuals, and launch campaigns faster than ever before.
             </p>
-            <p className="text-base md:text-lg text-text-body max-w-md">
-              Focus on strategy while Lee handles the repetitive tasks, ensuring your ads are always fresh, engaging, and optimized for performance.
-            </p>
+            <ul className="space-y-3 mb-8 md:mb-10 text-left max-w-md mx-auto md:mx-0">
+              {benefits.map((benefit, index) => (
+                <li key={index} className="flex items-start">
+                  <benefit.icon className="h-6 w-6 text-brand-primary-orange mr-3 mt-1 flex-shrink-0" />
+                  <span className="text-text-body/90 text-base md:text-lg">{benefit.text}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <button className="bg-brand-primary-orange hover:bg-brand-primary-orange/90 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-colors duration-150 ease-in-out text-base md:text-lg flex items-center justify-center group">
+                Get Started Free
+                <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button className="bg-transparent hover:bg-text-muted/10 text-text-body font-semibold py-3 px-6 rounded-lg border border-text-muted/50 shadow-sm transition-colors duration-150 ease-in-out text-base md:text-lg">
+                Learn More
+              </button>
+            </div>
           </div>
         </div>
       </div>

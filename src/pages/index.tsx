@@ -6,7 +6,9 @@ import Lenis from 'lenis'; // Updated Lenis import
 
 import Navbar from '@/components/landing/Navbar';
 import NewHeroSection from '@/components/landing/NewHeroSection';
-import AdCreativeSection from '@/components/landing/AdCreativeSection'; // Import the new section
+import AdCreativeSection from '@/components/landing/AdCreativeSection';
+import MetaCampaignsSection from '@/components/landing/MetaCampaignsSection'; // Import the Meta Campaigns section
+import LeadsQualificationSection from '@/components/landing/LeadsQualificationSection'; // Added import
 import Footer from '@/components/landing/Footer';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -14,6 +16,8 @@ gsap.registerPlugin(ScrollTrigger);
 export default function NewLandingPage() {
   const pinContainerRef = useRef<HTMLDivElement>(null);
   const horizontalTrackRef = useRef<HTMLDivElement>(null);
+  const pinContainerRef2 = useRef<HTMLDivElement>(null); // Added ref for second pin container
+  const horizontalTrackRef2 = useRef<HTMLDivElement>(null); // Added ref for second horizontal track
 
   // useEffect for Lenis smooth scroll
   useEffect(() => {
@@ -70,11 +74,50 @@ export default function NewLandingPage() {
       });
 
       // Refresh ScrollTrigger on window resize to handle responsive adjustments
-      ScrollTrigger.addEventListener("refresh", () => tl.scrollTrigger?.refresh());
+      const refreshHandler1 = () => tl.scrollTrigger?.refresh(); // Renamed for clarity
+      ScrollTrigger.addEventListener("refresh", refreshHandler1);
       
       return () => {
+        if (tl.scrollTrigger) {
+          tl.scrollTrigger.kill();
+        }
         tl.kill();
-        ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+        ScrollTrigger.removeEventListener("refresh", refreshHandler1);
+      };
+    }
+  }, []);
+
+  // useEffect for second horizontal scroll animation (MetaCampaigns and LeadsQualification)
+  useEffect(() => {
+    const pinContainer2 = pinContainerRef2.current;
+    const horizontalTrack2 = horizontalTrackRef2.current;
+
+    if (pinContainer2 && horizontalTrack2) {
+      const tl2 = gsap.timeline({
+        scrollTrigger: {
+          trigger: pinContainer2,
+          pin: true,
+          scrub: 1,
+          start: "top top",
+          end: () => `+=${horizontalTrack2.offsetWidth - window.innerWidth}`,
+          invalidateOnRefresh: true,
+        }
+      });
+
+      tl2.to(horizontalTrack2, {
+        x: () => -(horizontalTrack2.offsetWidth - window.innerWidth),
+        ease: "none"
+      });
+
+      const refreshHandler2 = () => tl2.scrollTrigger?.refresh();
+      ScrollTrigger.addEventListener("refresh", refreshHandler2);
+      
+      return () => {
+        if (tl2.scrollTrigger) {
+          tl2.scrollTrigger.kill();
+        }
+        tl2.kill();
+        ScrollTrigger.removeEventListener("refresh", refreshHandler2);
       };
     }
   }, []);
@@ -105,7 +148,7 @@ export default function NewLandingPage() {
         >
           <div 
             ref={horizontalTrackRef} 
-            className="flex w-[200vw]"
+            className="flex w-[200vw]" // Reverted width for two horizontal sections
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1.5' cy='1.5' r='1.5' fill='rgba(255,107,53,0.07)'/%3E%3C/svg%3E")`,
               backgroundRepeat: 'repeat',
@@ -120,7 +163,33 @@ export default function NewLandingPage() {
           </div>
         </div>
         
-        {/* Other sections will be added here later, after the pinned horizontal scroll */}
+        {/* New Pin Container for MetaCampaigns and LeadsQualification */}
+        <div 
+          ref={pinContainerRef2} 
+          className="relative w-full" 
+          style={{ 
+            backgroundImage: `radial-gradient(ellipse at center, rgba(255, 107, 53, 0.15) 0%, rgba(139, 92, 246, 0.1) 35%, rgba(0, 0, 0, 0) 70%)`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center center',
+          }}
+        >
+          <div 
+            ref={horizontalTrackRef2} 
+            className="flex w-[200vw]" 
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1.5' cy='1.5' r='1.5' fill='rgba(255,107,53,0.07)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat',
+            }}
+          >
+            <div className="w-screen h-screen flex-shrink-0 flex items-center justify-center">
+              <MetaCampaignsSection />
+            </div>
+            <div className="w-screen h-screen flex-shrink-0 flex items-center justify-center">
+              <LeadsQualificationSection />
+            </div>
+          </div>
+        </div>
+        
         <Footer />
       </div>
     </>
